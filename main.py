@@ -1,3 +1,4 @@
+# класс для хранения констант
 class Constants:
     SCREEN_WIDTH = 798
     SCREEN_HEIGHT = 600
@@ -5,12 +6,27 @@ class Constants:
     MAIN_COLOR = (210, 0, 158)
     SECOND_COLOR = (0, 163, 252)
 
+    BOT_CHANGE_Y = 0.6
+
+    ROAD_LEFT_BORDER_X = 178
+    ROAD_RIGHT_BORDER_X = 490
+
+    PLAYER_TOP_BORDER = 0
+    PLAYER_BOTTOM_BORDER = 495
+
+    BOT_BOTTOM_BORDER = 670
+
+    SCORES_FOR_INCREASE_BOT_SPEED = [15, 50, 90, 140, 200, 300, 450, 700, 1000, 1400, 2000, 2700, 4000, 5700]
+
 
 # показ стартового экрана
 def showStartScreen():
-    # отображение фона, создание кнопок и текста для них
+    # отображение фона, инициализация звука нажатия по кнопка
+    # создание кнопок и текста для них
     startBackground = pygame.image.load(r'resources\start_screen.png')
     screen.blit(startBackground, (0, 0))
+
+    clickSound = pygame.mixer.Sound(r'resources\click_sound.mp3')
 
     fontBtn = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 30)
 
@@ -28,8 +44,10 @@ def showStartScreen():
 
     run = True
 
+    # цикл для работы программы
     while run:
         clicked = False
+        # проверка на события выхода и клика
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -38,17 +56,22 @@ def showStartScreen():
                 if event.button == 1:
                     clicked = True
 
+        # по координатам мыши узнаём находится ли она в области кнопки и был ли клик
         mouseX, mouseY = pygame.mouse.get_pos()
 
         if isInteraction(playBtn, mouseX, mouseY, clicked):
-            run = False
+            clickSound.play()
+            pygame.mixer.music.stop()
             startGame()
+            run = False
 
         if isInteraction(instructionBtn, mouseX, mouseY, clicked):
-            run = False
+            clickSound.play()
             showInstructionScreen()
+            run = False
      
         if isInteraction(quitBtn, mouseX, mouseY, clicked):
+            clickSound.play()
             run = False
 
         pygame.display.update()
@@ -72,6 +95,8 @@ def showInstructionScreen():
     instructionBackground = pygame.image.load(r'resources\instruction_screen.png')
     screen.blit(instructionBackground, (0, 0))
 
+    clickSound = pygame.mixer.Sound(r'resources\click_sound.mp3')
+
     fontBtn = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 30)
 
     backText = fontBtn.render("Назад", True, Constants.SECOND_COLOR)
@@ -80,8 +105,10 @@ def showInstructionScreen():
 
     run = True
 
+    # цикл для работы программы
     while run:
         clicked = False
+        # проверка на события выхода и клика
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -89,19 +116,24 @@ def showInstructionScreen():
                 if event.button == 1:
                     clicked = True
 
+        # по координатам мыши узнаём находится ли она в области кнопки и был ли клик
         mouseX, mouseY = pygame.mouse.get_pos()
 
         if isInteraction(backBtn, mouseX, mouseY, clicked):
-            run = False
+            clickSound.play()
             showStartScreen()
+            run = False
 
         pygame.display.update()
 
 
-# отчёт перед началом игры
+# отчёт перед началом игры и запуск игры
 def startGame():
     countdownBackground = pygame.image.load(r'resources\blur_background.png')
     timerFont = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 70)
+
+    countdownSound = pygame.mixer.Sound(r'resources\countdown_sound.mp3')
+    countdownSound.play()
 
     for i in reversed(range(0, 4)):
         screen.blit(countdownBackground, (0, 0))
@@ -120,44 +152,36 @@ def startGame():
 
 # главный цикл игры
 def gameLoop():
-    # запуск фоновой музыки и инициализация звука стоклновения
-    pygame.mixer.music.load(r'resources\background_music.mp3')
+    # инициализация звука стоклновения
     pygame.mixer.music.play()
-
     crashSound = pygame.mixer.Sound(r'resources\crash_sound.mp3')
+    increaseSpeedSound = pygame.mixer.Sound(r'resources\increase_speed_sound.mp3')
 
-    # инициализация счёта, шрифта, загрузка изображений
-    # инициализация машин и их координат
+    # инициализация счёта, рекорда, шрифта, загрузка изображений
     score = 0
     highscore = readHighscore()
     fontScore = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 30)
 
     background = pygame.image.load(r'resources\background.png')
 
-    playerCar = pygame.image.load(r'resources\player_car.png')
-    playerCarX = 350
-    playerCarY = 495
-    playerCarXChange = 0
-    playerCarYChange = 0
+    # инициализация машин и их координат
+    playerCarImage = pygame.image.load(r'resources\player_car.png')
+    playerCar = Car(playerCarImage, 350, 495, 0, 0)
+    
+    botCar1Image = pygame.image.load(r'resources\bot_car_1.png')
+    botCar1 = Car(botCar1Image, random.randint(Constants.ROAD_LEFT_BORDER_X, Constants.ROAD_RIGHT_BORDER_X), 100, 0, 5)
+    
+    botCar2Image = pygame.image.load(r'resources\bot_car_2.png')
+    botCar2 = Car(botCar2Image, random.randint(Constants.ROAD_LEFT_BORDER_X, Constants.ROAD_RIGHT_BORDER_X), 100, 0, 5)
 
-    botCar1 = pygame.image.load(r'resources\bot_car_1.png')
-    botCar1X = random.randint(178, 490)
-    botCar1Y = 100
-    botCar1YChange = 5
+    botCar3Image = pygame.image.load(r'resources\bot_car_3.png')
+    botCar3 = Car(botCar3Image, random.randint(Constants.ROAD_LEFT_BORDER_X, Constants.ROAD_RIGHT_BORDER_X), 100, 0, 5)
 
-    botCar2 = pygame.image.load(r'resources\bot_car_2.png')
-    botCar2X = random.randint(178, 490)
-    botCar2Y = 100
-    botCar2YChange = 5
-
-    botCar3 = pygame.image.load(r'resources\bot_car_3.png')
-    botCar3X = random.randint(178, 490)
-    botCar3Y = 100
-    botCar3YChange = 5
-
-    valueForChangeBotSpeed = [15, 50, 90, 140, 200, 300, 450, 700, 1000, 1400, 2000, 2700]
+    # инициализация списка счётов, когда скорость машин увеличивается
+    valueForChangeBotSpeed = Constants.SCORES_FOR_INCREASE_BOT_SPEED
 
     run = True
+
     while run:
         # проверка на события
         for event in pygame.event.get():
@@ -167,44 +191,44 @@ def gameLoop():
             # нажатие кнопок, по которым фиксируется изменение координат игровой машины
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
-                    playerCarXChange += 5
+                    playerCar.changeX += 5
                 if event.key == pygame.K_LEFT:
-                    playerCarXChange -= 5
+                    playerCar.changeX -= 5
                 if event.key == pygame.K_UP:
-                    playerCarYChange -= 5
+                    playerCar.changeY -= 5
                 if event.key == pygame.K_DOWN:
-                    playerCarYChange += 5
+                    playerCar.changeY += 5
 
             # отжатие кнопок
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_RIGHT:
-                    playerCarXChange = 0
+                    playerCar.changeX = 0
                 if event.key == pygame.K_LEFT:
-                    playerCarXChange = 0
+                    playerCar.changeX = 0
                 if event.key == pygame.K_UP:
-                    playerCarYChange = 0
+                    playerCar.changeY = 0
                 if event.key == pygame.K_DOWN:
-                    playerCarYChange = 0
+                    playerCar.changeY = 0
 
         # проверка на выход игровой машины за границы
-        if playerCarX < 178:
-            playerCarX = 178
-        if playerCarX > 490:
-            playerCarX = 490
+        if playerCar.X < Constants.ROAD_LEFT_BORDER_X:
+            playerCar.X = Constants.ROAD_LEFT_BORDER_X
+        if playerCar.X > Constants.ROAD_RIGHT_BORDER_X:
+            playerCar.X = Constants.ROAD_RIGHT_BORDER_X
 
-        if playerCarY < 0:
-            playerCarY = 0
-        if playerCarY > 495:
-            playerCarY = 495
+        if playerCar.Y < Constants.PLAYER_TOP_BORDER:
+            playerCar.Y = Constants.PLAYER_TOP_BORDER
+        if playerCar.Y > Constants.PLAYER_BOTTOM_BORDER:
+            playerCar.Y = Constants.PLAYER_BOTTOM_BORDER
 
         # отображение изображений
         screen.blit(background, (0, 0))
 
-        screen.blit(playerCar, (playerCarX, playerCarY))
+        screen.blit(playerCar.image, (playerCar.X, playerCar.Y))
 
-        screen.blit(botCar1, (botCar1X, botCar1Y))
-        screen.blit(botCar2, (botCar2X, botCar2Y))
-        screen.blit(botCar3, (botCar3X, botCar3Y))
+        screen.blit(botCar1.image, (botCar1.X, botCar1.Y))
+        screen.blit(botCar2.image, (botCar2.X, botCar2.Y))
+        screen.blit(botCar3.image, (botCar3.X, botCar3.Y))
 
         # отображение текущего и лучшего счёта
         renderedScore = fontScore.render(f"Счёт: {score}", True, Constants.SECOND_COLOR)
@@ -214,63 +238,60 @@ def gameLoop():
         screen.blit(renderedHighscore, (570, 310))
         
         # изменение координат игровой машины
-        playerCarX += playerCarXChange
-        playerCarY += playerCarYChange
+        playerCar.move()
 
-        # изменение координат вражеских машин, увеличение счёта
-        botCar1Y += botCar1YChange
-        botCar2Y += botCar2YChange
-        botCar3Y += botCar3YChange
+        # изменение координат вражеских машин
+        botCar1.move()
+        botCar2.move()
+        botCar3.move()
 
-        if botCar1Y > 670:
-            botCar1X = random.randint(178, 490)
-            botCar1Y = -100
+        # увеличение счёта и сброс координат вражеских машин
+        if botCar1.Y > Constants.BOT_BOTTOM_BORDER:
+            botCar1.resetPosition(random.randint(178, 490), -100)
             score += 1
-        if botCar2Y > 670:
-            botCar2X = random.randint(178, 490)
-            botCar2Y = -150
+        if botCar2.Y > Constants.BOT_BOTTOM_BORDER:
+            botCar2.resetPosition(random.randint(178, 490), -150)
             score += 1
-        if botCar3Y > 670:
-            botCar3X = random.randint(178, 490)
-            botCar3Y = -200
+        if botCar3.Y > Constants.BOT_BOTTOM_BORDER:
+            botCar3.resetPosition(random.randint(178, 490), -200)
             score += 1
 
+        # увеличение скорости вражеских машин
         if score in valueForChangeBotSpeed:
-            botCar1YChange += 0.6
-            botCar2YChange += 0.6
-            botCar3YChange += 0.6
+            increaseSpeedSound.play()
+            botCar1.increaseSpeed(Constants.BOT_CHANGE_Y)
+            botCar2.increaseSpeed(Constants.BOT_CHANGE_Y)
+            botCar3.increaseSpeed(Constants.BOT_CHANGE_Y)
             valueForChangeBotSpeed.remove(score)
 
-        # проверка на столкновение, в случае его возникновения - игра прекращается
-        def isCrash(firstCarX, firstCarY, secondCarX, secondCarY):
-            distance = math.sqrt(math.pow(firstCarX-secondCarX, 2) + math.pow(firstCarY - secondCarY, 2))
-            return distance < 50
-
-        if isCrash(botCar1X, botCar1Y, playerCarX, playerCarY) or \
-           isCrash(botCar2X, botCar2Y, playerCarX, playerCarY) or \
-           isCrash(botCar3X, botCar3Y, playerCarX, playerCarY):
-           break
+        # проверка на столкновение машины игрока с другими машинами
+        if playerCar.isCrash(botCar1) or playerCar.isCrash(botCar2) or playerCar.isCrash(botCar3):
+            run = False
 
         pygame.display.update()
 
-    # если произошла авария, сбрасываем все координаты движения
-    # останавливаем музыку, включаем звук аварии
-    # сохраняем счёт, показываем экран окончания игры
-    playerCarXChange = 0
-    playerCarYChange = 0
-    botCar1YChange = 0
-    botCar2YChange = 0
-    botCar3YChange = 0
+    # если произошла авария
+    # сбрасываем все координаты движения
+    playerCar.resetPosition(0, 0)
+    botCar1.resetPosition(0, 0)
+    botCar2.resetPosition(0, 0)
+    botCar3.resetPosition(0, 0)
 
+    # останавливаем фоновую музыку, включаем звук столкновения
     pygame.mixer.music.stop()
     crashSound.play()
 
+    # если нужно сохраняем счёт
     if score > highscore:
         saveHighscore(score)
 
-    showGameOverScreen(score, highscore)
+    # показ экрана с результатами через 1 секунду
+    time.sleep(1)
+
+    showResultScreen(score, highscore)
 
 
+# возвращает лучший результат из файла или 0, если его не было
 def readHighscore():
     highscore = open(r'resources\highscore.txt', 'r').read()
     return int(highscore) if highscore else 0
@@ -281,23 +302,39 @@ def saveHighscore(score):
 
 
 # показ экрана окончания игры
-def showGameOverScreen(score, highscore):
-    gameOverBackground = pygame.image.load(r'resources\gameover_screen.png')
-    gameOverFont = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 44)
-    run = True
+def showResultScreen(score, highscore):
+    # прогрузка изображения, шрифта, звука нажатия кнопки
+    resultBackground = pygame.image.load(r'resources\result_screen.png')
+    resultFont = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 44)
 
-    screen.blit(gameOverBackground,(0,0))
+    clickSound = pygame.mixer.Sound(r'resources\click_sound.mp3')
+
+    # показ изображения
+    screen.blit(resultBackground,(0,0))
+
+    pygame.display.update()
     time.sleep(0.5)
 
-    renderedScore = gameOverFont.render(f"Счёт: {score}", True, Constants.SECOND_COLOR)
+    # проигрывание звука и показ счёта после 0.5 секунд
+    resultSound = pygame.mixer.Sound(r'resources\result_sound.mp3')
+    resultSound.play()
+
+    renderedScore = resultFont.render(f"Счёт: {score}", True, Constants.SECOND_COLOR)
     renderedScoreRect = renderedScore.get_rect(center=(Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 - 25))
     screen.blit(renderedScore, renderedScoreRect)
-    time.sleep(0.5)
 
-    renderedHighscore = gameOverFont.render(f"Рекорд: {highscore}", True, Constants.MAIN_COLOR)
+    pygame.display.update()
+    time.sleep(1)
+
+    # показ рекорда после 1 секунды
+    renderedHighscore = resultFont.render(f"Рекорд: {highscore}", True, Constants.MAIN_COLOR)
     renderedHighscoreRect = renderedHighscore.get_rect(center=(Constants.SCREEN_WIDTH / 2, Constants.SCREEN_HEIGHT / 2 + 25))
     screen.blit(renderedHighscore, renderedHighscoreRect)
 
+    pygame.display.update()
+    time.sleep(1)
+
+    # прогрузка кнопок после 1 секунды
     fontBtn = pygame.font.Font(r'resources\NotoSans-Bold.ttf', 30)
 
     playAgainText = fontBtn.render("Играть снова", True, Constants.SECOND_COLOR)
@@ -308,8 +345,11 @@ def showGameOverScreen(score, highscore):
     playAgainBtn = pygame.Rect(140, 440, 230, 50)
     backToMenuBtn = pygame.Rect(415, 440, 250, 50)
 
+    run = True
+
     while run:
         clicked = False
+        # события на выход и кнопки
         for event in pygame.event.get():
              if event.type == pygame.QUIT:
                 pygame.quit()
@@ -319,22 +359,23 @@ def showGameOverScreen(score, highscore):
                     clicked = True
 
         mouseX, mouseY = pygame.mouse.get_pos()
-
+        
         if isInteraction(playAgainBtn, mouseX, mouseY, clicked):
-            run = False
+            clickSound.play()
             startGame()
+            run = False
 
         if isInteraction(backToMenuBtn, mouseX, mouseY, clicked):
-            run = False
+            clickSound.play()
             showStartScreen()
+            run = False
 
         pygame.display.update()
 
 
-# импорты, инициализация окна, запуск главного цикла
+# импорты, инициализация окна, запуск стартового экрана и фоновой музыки
 if __name__ == '__main__':
     import random
-    import math
     import time
     import sys
 
@@ -342,10 +383,15 @@ if __name__ == '__main__':
     pygame.init()
     from pygame.locals import *
 
+    from Car import Car
+
     screen = pygame.display.set_mode((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT))
     pygame.display.set_caption('Гонка 2D')
 
     logo = pygame.image.load(r'resources\logo.png')
     pygame.display.set_icon(logo)
+
+    pygame.mixer.music.load(r'resources\background_music.mp3')
+    pygame.mixer.music.play()
 
     showStartScreen()
