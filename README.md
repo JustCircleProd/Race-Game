@@ -1,4 +1,4 @@
-# Race Game
+# Race Game🚗
 
 **Игра Race Game посвящена гонкам с видом сверху**. 
 В данной игре вам предстоит уклоняться от едущих навстречу машин.
@@ -30,7 +30,7 @@
 Фоновая музыка: Sferro - Blitz
 
 ## License
-      Copyright 2022 JustCircle Prod.
+      Copyright 2022 JustCircle Prod. (Vadim Karchagin)
 
       Licensed under the Apache License, Version 2.0 (the "License");
       you may not use this file except in compliance with the License.
